@@ -4304,3 +4304,1912 @@ Start with:
 Then choose the command.
 
 That is the difference between **memorizing Git** and **actually understanding Git**.
+_______________________
+
+Practical LAB SECTION
+
+# 122. Practical Git Lab — Real-World DevOps Hands-On
+
+This lab is designed to practice the most important Git commands in a realistic DevOps workflow.
+
+You will practice:
+
+* Repository initialization
+* Commits
+* Branches
+* Merge
+* Merge conflicts
+* Rebase
+* Cherry-pick
+* Revert
+* Reset
+* Stash
+* Reflog
+* Remote repository
+* Push rejection
+* `git pull --rebase`
+* `git push --force-with-lease`
+* Git history investigation
+
+---
+
+# 123. Lab Setup
+
+Create a temporary Git repository:
+
+```bash
+mkdir git-interview-lab
+cd git-interview-lab
+
+git init
+```
+
+Configure Git if required:
+
+```bash
+git config user.name "DevOps Engineer"
+git config user.email "devops@example.com"
+```
+
+Check:
+
+```bash
+git status
+```
+
+Expected:
+
+```text
+On branch main
+
+No commits yet
+```
+
+---
+
+# 124. Lab 1 — Create Your First Commit
+
+Create a simple application configuration file:
+
+```bash
+cat > app.conf <<'EOF'
+APP_NAME=ShopSphere
+APP_ENV=dev
+APP_PORT=8080
+EOF
+```
+
+Check:
+
+```bash
+git status
+```
+
+You should see:
+
+```text
+Untracked files:
+    app.conf
+```
+
+Stage and commit:
+
+```bash
+git add app.conf
+git commit -m "Add application configuration"
+```
+
+Check:
+
+```bash
+git log --oneline
+```
+
+Example:
+
+```text
+A1B2C3D Add application configuration
+```
+
+Concept:
+
+```text
+A1B2C3D
+   |
+app.conf
+```
+
+Interview point:
+
+> Git tracks snapshots of the project through commits. Each commit represents a point in the project's history.
+
+---
+
+# 125. Lab 2 — Create Multiple Commits
+
+Modify the application configuration:
+
+```bash
+cat >> app.conf <<'EOF'
+APP_LOG_LEVEL=INFO
+EOF
+```
+
+Commit:
+
+```bash
+git add app.conf
+git commit -m "Configure application logging"
+```
+
+Add another change:
+
+```bash
+cat >> app.conf <<'EOF'
+DB_HOST=localhost
+EOF
+```
+
+Commit:
+
+```bash
+git add app.conf
+git commit -m "Add database configuration"
+```
+
+View history:
+
+```bash
+git log --oneline --graph --decorate
+```
+
+Example:
+
+```text
+C3D4E5F (HEAD -> main) Add database configuration
+B2C3D4E Configure application logging
+A1B2C3D Add application configuration
+```
+
+Visualize it:
+
+```text
+A1B2C3D
+   |
+B2C3D4E
+   |
+C3D4E5F
+   |
+  main
+   |
+  HEAD
+```
+
+Remember:
+
+```text
+HEAD
+ ↓
+main
+ ↓
+latest commit
+```
+
+---
+
+# 126. Lab 3 — Create a Feature Branch
+
+Create a feature branch:
+
+```bash
+git switch -c feature/monitoring
+```
+
+Check:
+
+```bash
+git branch
+```
+
+Example:
+
+```text
+* feature/monitoring
+  main
+```
+
+Create monitoring configuration:
+
+```bash
+cat > monitoring.conf <<'EOF'
+METRICS_ENABLED=true
+HEALTH_CHECK=/health
+EOF
+```
+
+Commit:
+
+```bash
+git add monitoring.conf
+git commit -m "Add application monitoring configuration"
+```
+
+History:
+
+```text
+A1B2C3D---B2C3D4E---C3D4E5F---D4E5F6A
+                                  ↑
+                           feature/monitoring
+```
+
+Main still points to:
+
+```text
+A1B2C3D---B2C3D4E---C3D4E5F
+                           ↑
+                          main
+```
+
+Important:
+
+> A branch is basically a movable pointer to a commit.
+
+---
+
+# 127. Lab 4 — Merge Feature Branch
+
+Switch back to main:
+
+```bash
+git switch main
+```
+
+Merge:
+
+```bash
+git merge feature/monitoring
+```
+
+If Git performs a fast-forward merge:
+
+```text
+Before:
+
+A---B---C       main
+         \
+          D     feature
+
+
+After:
+
+A---B---C---D
+             ↑
+            main
+```
+
+Check:
+
+```bash
+git log --oneline --graph --decorate
+```
+
+Interview answer:
+
+> A fast-forward merge happens when the target branch has no new commits since the feature branch diverged, so Git can simply move the branch pointer forward.
+
+---
+
+# 128. Lab 5 — Practice a Merge Conflict
+
+Create a new branch:
+
+```bash
+git switch -c feature/app-port
+```
+
+Change:
+
+```bash
+sed -i 's/APP_PORT=8080/APP_PORT=9090/' app.conf
+```
+
+Commit:
+
+```bash
+git add app.conf
+git commit -m "Change application port"
+```
+
+Now switch to main:
+
+```bash
+git switch main
+```
+
+Make a conflicting change:
+
+```bash
+sed -i 's/APP_PORT=8080/APP_PORT=7070/' app.conf
+```
+
+Commit:
+
+```bash
+git add app.conf
+git commit -m "Update application port for production"
+```
+
+Now merge:
+
+```bash
+git merge feature/app-port
+```
+
+Git should report a conflict.
+
+Check:
+
+```bash
+git status
+```
+
+You may see:
+
+```text
+both modified: app.conf
+```
+
+Open the file:
+
+```bash
+cat app.conf
+```
+
+You may see:
+
+```text
+<<<<<<< HEAD
+APP_PORT=7070
+=======
+APP_PORT=9090
+>>>>>>> feature/app-port
+```
+
+Meaning:
+
+```text
+<<<<<<< HEAD
+        |
+        | current branch
+        |
+=======
+        |
+        | incoming branch
+        |
+>>>>>>> feature/app-port
+```
+
+Choose the correct configuration and remove the conflict markers.
+
+For example:
+
+```text
+APP_NAME=ShopSphere
+APP_ENV=dev
+APP_PORT=9090
+APP_LOG_LEVEL=INFO
+DB_HOST=localhost
+```
+
+Stage:
+
+```bash
+git add app.conf
+```
+
+Complete the merge:
+
+```bash
+git commit
+```
+
+Check:
+
+```bash
+git log --oneline --graph --decorate
+```
+
+You may now see:
+
+```text
+        D4E5F6A
+       /       \
+C3D4E5F         G7H8I9J
+       \       /
+        E5F6G7H
+```
+
+The important concept:
+
+> A merge conflict is not a Git failure. Git is asking the developer to decide which changes should remain.
+
+---
+
+# 129. Lab 6 — Practice Rebase
+
+Create another feature:
+
+```bash
+git switch -c feature/security
+```
+
+Create:
+
+```bash
+cat > security.conf <<'EOF'
+TLS_ENABLED=true
+SECURITY_HEADERS=true
+EOF
+```
+
+Commit:
+
+```bash
+git add security.conf
+git commit -m "Add security configuration"
+```
+
+Now create another commit on main:
+
+```bash
+git switch main
+
+cat >> app.conf <<'EOF'
+APP_TIMEOUT=30
+EOF
+
+git add app.conf
+git commit -m "Configure application timeout"
+```
+
+Now feature/security is behind main.
+
+Visualize:
+
+```text
+             D4E5F6A  feature/security
+            /
+A---B---C
+         \
+          E5F6G7H    main
+```
+
+Actually, conceptually the feature branch is based on `C`, while main moved to `E`.
+
+Run:
+
+```bash
+git switch feature/security
+git rebase main
+```
+
+After rebase:
+
+```text
+A---B---C---E5F6G7H---F6G7H8I
+                       ↑
+                feature/security
+```
+
+The security commit was replayed on top of the latest main commit.
+
+Important:
+
+```text
+MERGE
+→ combine histories
+
+REBASE
+→ replay commits on a new base
+```
+
+Interview answer:
+
+> I use rebase when I want to update my feature branch with the latest target-branch changes while keeping a linear history. I avoid rebasing shared commits because rebase rewrites commit IDs.
+
+---
+
+# 130. Lab 7 — Practice Cherry-Pick
+
+Suppose the security fix exists on:
+
+```text
+feature/security
+```
+
+but production is represented by:
+
+```text
+release/1.0
+```
+
+Create the release branch:
+
+```bash
+git switch main
+git switch -c release/1.0
+```
+
+Now find the security commit:
+
+```bash
+git log --oneline feature/security
+```
+
+Example:
+
+```text
+F6G7H8I Add security configuration
+E5F6G7H Configure application timeout
+...
+```
+
+Cherry-pick only the security commit:
+
+```bash
+git cherry-pick F6G7H8I
+```
+
+History:
+
+```text
+feature/security:
+
+A---B---C---E---F
+                ↑
+           security fix
+
+
+release/1.0:
+
+A---B---C---E---F'
+                ↑
+          cherry-picked
+```
+
+Notice:
+
+```text
+F6G7H8I
+   ↓
+F6G7H8I'
+```
+
+The changes are similar, but the commit ID is different because Git created a new commit.
+
+Interview answer:
+
+> I use cherry-pick when I need one specific commit, such as a production hotfix or security fix, without bringing the entire feature branch.
+
+---
+
+# 131. Lab 8 — Practice Git Revert
+
+Find the latest commit:
+
+```bash
+git log --oneline -5
+```
+
+Suppose:
+
+```text
+F6G7H8I Add security configuration
+E5F6G7H Configure application timeout
+```
+
+If the security change needs to be undone:
+
+```bash
+git revert F6G7H8I
+```
+
+Git creates a new commit.
+
+History:
+
+```text
+A---B---C---E---F---R
+                    ↑
+              revert F
+```
+
+Check:
+
+```bash
+git log --oneline --graph
+```
+
+Important:
+
+```text
+Original commit remains.
+New commit reverses its changes.
+```
+
+Interview answer:
+
+> For a shared branch such as main or production, I normally prefer revert because it preserves the existing history and creates an explicit undo commit.
+
+---
+
+# 132. Lab 9 — Practice Reset
+
+Create a temporary commit:
+
+```bash
+echo "temporary=true" >> app.conf
+
+git add app.conf
+git commit -m "Temporary configuration"
+```
+
+Check:
+
+```bash
+git log --oneline -3
+```
+
+Suppose:
+
+```text
+H8I9J0K Temporary configuration
+R7S8T9U Revert "Add security configuration"
+...
+```
+
+Now practice soft reset:
+
+```bash
+git reset --soft HEAD~1
+```
+
+Check:
+
+```bash
+git status
+```
+
+The commit disappeared from the current branch history, but the changes remain staged.
+
+Mental model:
+
+```text
+SOFT
+
+HEAD moves
+   ↓
+Changes remain staged
+```
+
+Now unstage:
+
+```bash
+git reset
+```
+
+Changes become unstaged.
+
+Mental model:
+
+```text
+MIXED
+
+HEAD moves
+   ↓
+Changes remain in working tree
+   ↓
+Not staged
+```
+
+For the lab, do not use `--hard` unless you understand the consequences.
+
+---
+
+# 133. Lab 10 — Practice Stash
+
+Create an unfinished change:
+
+```bash
+echo "DEBUG_MODE=true" >> app.conf
+```
+
+Check:
+
+```bash
+git status
+```
+
+Now imagine you receive an urgent production task.
+
+Store your unfinished work:
+
+```bash
+git stash push -m "WIP debug configuration"
+```
+
+Check:
+
+```bash
+git status
+```
+
+Working tree should be clean.
+
+View stash:
+
+```bash
+git stash list
+```
+
+Example:
+
+```text
+stash@{0}: On main: WIP debug configuration
+```
+
+Restore it:
+
+```bash
+git stash pop
+```
+
+Check:
+
+```bash
+git status
+```
+
+Mental model:
+
+```text
+WORKING TREE
+     |
+   stash
+     |
+temporary storage
+     |
+stash pop
+     ↓
+WORKING TREE
+```
+
+Interview answer:
+
+> I use stash when I have uncommitted work but need to temporarily switch context without creating an unnecessary commit.
+
+---
+
+# 134. Lab 11 — Practice Reflog
+
+Create a commit:
+
+```bash
+echo "RECOVERY_TEST=true" >> app.conf
+
+git add app.conf
+git commit -m "Add recovery test configuration"
+```
+
+Find history:
+
+```bash
+git log --oneline -3
+```
+
+Now intentionally move the branch backward:
+
+```bash
+git reset --hard HEAD~1
+```
+
+The commit appears to be gone from normal history.
+
+Check:
+
+```bash
+git log --oneline
+```
+
+Now use:
+
+```bash
+git reflog
+```
+
+Example:
+
+```text
+abc1234 HEAD@{0}: reset: moving to HEAD~1
+xyz7890 HEAD@{1}: commit: Add recovery test configuration
+```
+
+Recover the previous commit:
+
+```bash
+git reset --hard xyz7890
+```
+
+Verify:
+
+```bash
+git log --oneline -3
+```
+
+The commit is back.
+
+Mental model:
+
+```text
+git log
+→ normal visible history
+
+git reflog
+→ local record of where HEAD/refs moved
+```
+
+Interview answer:
+
+> When a local commit appears to be lost after reset or another history operation, I check reflog first. It often allows me to recover the previous HEAD position.
+
+---
+
+# 135. Lab 12 — Simulate Remote Repository
+
+Create a bare repository:
+
+```bash
+cd ..
+git init --bare git-remote.git
+```
+
+Go back:
+
+```bash
+cd git-interview-lab
+```
+
+Add remote:
+
+```bash
+git remote add origin ../git-remote.git
+```
+
+Check:
+
+```bash
+git remote -v
+```
+
+Push:
+
+```bash
+git push -u origin main
+```
+
+The `-u` establishes the upstream relationship.
+
+After this, you can normally use:
+
+```bash
+git push
+git pull
+```
+
+instead of specifying:
+
+```bash
+git push origin main
+git pull origin main
+```
+
+---
+
+# 136. Lab 13 — Simulate a Push Rejection
+
+This is one of the most important DevOps Git labs.
+
+Clone the remote into another directory:
+
+```bash
+cd ..
+git clone git-remote.git developer2
+```
+
+Now there are two working copies:
+
+```text
+Developer 1
+git-interview-lab
+
+Developer 2
+developer2
+```
+
+### Developer 1
+
+Go into your original repository:
+
+```bash
+cd git-interview-lab
+```
+
+Create a commit:
+
+```bash
+echo "DEV1=true" >> app.conf
+
+git add app.conf
+git commit -m "Developer 1 configuration"
+```
+
+Push:
+
+```bash
+git push
+```
+
+### Developer 2
+
+Open another terminal:
+
+```bash
+cd developer2
+```
+
+Create a different commit:
+
+```bash
+echo "DEV2=true" >> app.conf
+
+git add app.conf
+git commit -m "Developer 2 configuration"
+```
+
+Push:
+
+```bash
+git push
+```
+
+Now Developer 1 is behind the remote.
+
+Create another local commit:
+
+```bash
+cd ../git-interview-lab
+
+echo "DEV1_SECOND=true" >> app.conf
+
+git add app.conf
+git commit -m "Developer 1 second configuration"
+```
+
+Try:
+
+```bash
+git push
+```
+
+You should get a rejection similar to:
+
+```text
+! [rejected] main -> main (fetch first)
+error: failed to push some refs
+```
+
+Why?
+
+```text
+Remote:
+
+A---B---C
+        ↑
+       origin/main
+
+
+Local:
+
+A---B---C---D
+            ↑
+           main
+
+```
+
+Actually, because Developer 2 pushed a commit, the actual divergence is:
+
+```text
+             D     local
+            /
+A---B---C
+            \
+             E     remote
+```
+
+Git refuses to overwrite the remote history.
+
+---
+
+# 137. Lab 14 — Fix Push Rejection Using Rebase
+
+First fetch:
+
+```bash
+git fetch origin
+```
+
+Now:
+
+```text
+Remote-tracking branch updated.
+
+origin/main
+     ↓
+
+A---B---C---E
+```
+
+Your local branch:
+
+```text
+A---B---C---D
+            ↑
+           main
+```
+
+Rebase:
+
+```bash
+git rebase origin/main
+```
+
+Git replays `D` on top of `E`.
+
+Result:
+
+```text
+A---B---C---E---D'
+                 ↑
+                main
+```
+
+Notice:
+
+```text
+D
+↓
+D'
+```
+
+The commit ID changes because the parent changed.
+
+Now push:
+
+```bash
+git push
+```
+
+This should succeed.
+
+This is the exact mental model to remember:
+
+```text
+git fetch
+    ↓
+Update remote-tracking information
+
+git rebase origin/main
+    ↓
+Replay local commits on latest remote history
+
+git push
+    ↓
+Update remote
+```
+
+Interview answer:
+
+> If my push is rejected because the remote branch has new commits, I first fetch the latest remote state. If my local changes can be replayed cleanly, I commonly rebase my local commits onto the updated remote branch and then push. This keeps the history linear and avoids unnecessarily creating a merge commit.
+
+---
+
+# 138. Lab 15 — Practice Rebase Conflict
+
+Create a feature branch:
+
+```bash
+git switch -c feature/config
+```
+
+Change:
+
+```bash
+sed -i 's/APP_ENV=dev/APP_ENV=test/' app.conf
+
+git add app.conf
+git commit -m "Set application environment to test"
+```
+
+Switch to main:
+
+```bash
+git switch main
+```
+
+Make a conflicting change:
+
+```bash
+sed -i 's/APP_ENV=dev/APP_ENV=prod/' app.conf
+
+git add app.conf
+git commit -m "Set application environment to production"
+```
+
+Now:
+
+```bash
+git switch feature/config
+git rebase main
+```
+
+Git may stop with a conflict.
+
+Check:
+
+```bash
+git status
+```
+
+Resolve the file:
+
+```bash
+vim app.conf
+```
+
+Remove:
+
+```text
+<<<<<<<
+=======
+>>>>>>>
+```
+
+Keep the desired content.
+
+Stage:
+
+```bash
+git add app.conf
+```
+
+Continue:
+
+```bash
+git rebase --continue
+```
+
+If more conflicts occur, repeat:
+
+```text
+resolve
+   ↓
+git add
+   ↓
+git rebase --continue
+```
+
+If you want to cancel the entire rebase:
+
+```bash
+git rebase --abort
+```
+
+Mental model:
+
+```text
+REBASE CONFLICT
+
+Pause
+  ↓
+Resolve
+  ↓
+git add
+  ↓
+git rebase --continue
+```
+
+---
+
+# 139. Lab 16 — Practice Force-With-Lease
+
+This is an advanced lab.
+
+Suppose you rewrite a feature branch using:
+
+```bash
+git rebase -i HEAD~3
+```
+
+Your local history changes:
+
+```text
+Before:
+
+A---B---C---D
+             ↑
+            feature
+```
+
+After rebase:
+
+```text
+A---B---C'---D'
+             ↑
+            feature
+```
+
+The remote still contains:
+
+```text
+A---B---C---D
+             ↑
+        origin/feature
+```
+
+A normal push may be rejected because the history was rewritten.
+
+For a personal/shared feature branch where rewriting is allowed:
+
+```bash
+git push --force-with-lease origin feature/config
+```
+
+Why `--force-with-lease`?
+
+Because it provides an additional safety check.
+
+Imagine:
+
+```text
+Remote:
+
+A---B---C---D---E
+                 ↑
+             someone else's
+                commit
+```
+
+But your local remote-tracking information only knows:
+
+```text
+A---B---C---D
+             ↑
+        origin/feature
+```
+
+Your rewritten local branch is:
+
+```text
+A---B---C'---D'
+```
+
+`--force-with-lease` can refuse the push because the remote has changed unexpectedly.
+
+Mental model:
+
+```text
+--force
+→ overwrite remote
+
+--force-with-lease
+→ overwrite only if remote is still what I expect
+```
+
+Interview answer:
+
+> When a feature branch has intentionally been rebased and requires a non-fast-forward push, I prefer `--force-with-lease` over `--force`. It adds a safety check so I don't accidentally overwrite remote work that appeared after my last known remote state. I avoid rewriting shared protected branches unless the team's workflow explicitly permits it.
+
+---
+
+# 140. Lab 17 — Practice Git Diff
+
+Modify:
+
+```bash
+echo "CACHE_ENABLED=true" >> app.conf
+```
+
+Check unstaged changes:
+
+```bash
+git diff
+```
+
+Stage:
+
+```bash
+git add app.conf
+```
+
+Now:
+
+```bash
+git diff
+```
+
+may show nothing because the change is staged.
+
+Use:
+
+```bash
+git diff --cached
+```
+
+to see staged changes.
+
+Mental model:
+
+```text
+Working Tree
+     |
+ git diff
+     ↓
+unstaged changes
+
+
+Staging Area
+     |
+git diff --cached
+     ↓
+staged changes
+```
+
+---
+
+# 141. Lab 18 — Practice Git Log Investigation
+
+Run:
+
+```bash
+git log --oneline --graph --decorate --all
+```
+
+This is one of the most useful commands during troubleshooting.
+
+Useful variations:
+
+```bash
+git log --oneline
+```
+
+```bash
+git log --graph --oneline --all
+```
+
+```bash
+git log --stat
+```
+
+```bash
+git log -p
+```
+
+```bash
+git log --author="DevOps Engineer"
+```
+
+For a specific file:
+
+```bash
+git log -- app.conf
+```
+
+---
+
+# 142. Lab 19 — Practice Git Blame
+
+Run:
+
+```bash
+git blame app.conf
+```
+
+Example:
+
+```text
+A1B2C3D (DevOps Engineer 2026-09-21) APP_NAME=ShopSphere
+B2C3D4E (DevOps Engineer 2026-09-21) APP_ENV=dev
+F6G7H8I (DevOps Engineer 2026-09-21) APP_TIMEOUT=30
+```
+
+This helps answer:
+
+```text
+Who changed this line?
+Which commit changed it?
+When was it changed?
+```
+
+Important:
+
+> `git blame` is an investigation tool, not a way to assign fault.
+
+In production troubleshooting, combine it with:
+
+```bash
+git show <commit-id>
+```
+
+to inspect the actual change.
+
+---
+
+# 143. Lab 20 — Practice Git Clean
+
+Create temporary files:
+
+```bash
+touch debug.log
+touch test.tmp
+mkdir temp
+touch temp/output.txt
+```
+
+Check:
+
+```bash
+git status
+```
+
+Preview what Git would remove:
+
+```bash
+git clean -n
+```
+
+This is a dry run.
+
+If you are certain:
+
+```bash
+git clean -f
+```
+
+For directories:
+
+```bash
+git clean -fd
+```
+
+Important:
+
+> Always use `git clean -n` first. `git clean` can permanently remove untracked files.
+
+---
+
+# 144. Complete DevOps Git Troubleshooting Flow
+
+When a deployment-related Git issue occurs, follow this sequence.
+
+## Step 1 — Check status
+
+```bash
+git status
+```
+
+## Step 2 — Understand current branch
+
+```bash
+git branch --show-current
+```
+
+## Step 3 — Inspect history
+
+```bash
+git log --oneline --graph --decorate --all -20
+```
+
+## Step 4 — Update remote information
+
+```bash
+git fetch origin
+```
+
+## Step 5 — Compare local and remote
+
+```bash
+git log --oneline HEAD..origin/main
+```
+
+Remote-only commits:
+
+```bash
+git log --oneline origin/main..HEAD
+```
+
+Local-only commits.
+
+## Step 6 — Decide the operation
+
+```text
+Need to undo shared commit?
+        ↓
+      revert
+
+Need to move local branch back?
+        ↓
+      reset
+
+Need to recover lost local work?
+        ↓
+     reflog
+
+Need one commit from another branch?
+        ↓
+   cherry-pick
+
+Need latest target branch in feature?
+        ↓
+      rebase
+
+Need to combine branches?
+        ↓
+      merge
+
+Need temporary work storage?
+        ↓
+      stash
+```
+
+---
+
+# 145. Enterprise DevOps Git Workflow
+
+A realistic team workflow may look like:
+
+```text
+Developer
+   |
+   | git clone
+   ↓
+Local repository
+   |
+   | feature branch
+   ↓
+feature/payment-api
+   |
+   | commits
+   ↓
+Pull Request
+   |
+   | code review
+   | CI
+   | security scan
+   | tests
+   ↓
+main
+   |
+   | CI/CD
+   ↓
+Build
+   |
+   ↓
+Docker Image
+   |
+   ↓
+ECR
+   |
+   ↓
+Deployment
+   |
+   ↓
+EKS / ECS / EC2
+```
+
+Typical commands:
+
+```bash
+git clone <repository>
+cd repository
+
+git switch -c feature/payment-api
+
+git add .
+git commit -m "Add payment API configuration"
+
+git fetch origin
+git rebase origin/main
+
+git push -u origin feature/payment-api
+```
+
+Then create a Pull Request.
+
+After review and CI validation, the feature is merged according to the team's branch protection policy.
+
+---
+
+# 146. Git Interview Practical Cheat Sheet
+
+| Situation                       | Command                       |
+| ------------------------------- | ----------------------------- |
+| Check working tree              | `git status`                  |
+| View history                    | `git log --oneline --graph`   |
+| Create branch                   | `git switch -c feature/x`     |
+| Switch branch                   | `git switch main`             |
+| Merge branch                    | `git merge feature/x`         |
+| Update remote info              | `git fetch origin`            |
+| Update feature using rebase     | `git rebase origin/main`      |
+| Undo shared commit              | `git revert <commit>`         |
+| Move local branch backward      | `git reset --mixed HEAD~1`    |
+| Keep changes staged after reset | `git reset --soft HEAD~1`     |
+| Remove changes completely       | `git reset --hard HEAD~1`     |
+| Recover lost local commit       | `git reflog`                  |
+| Apply one commit                | `git cherry-pick <commit>`    |
+| Temporarily save work           | `git stash`                   |
+| Restore stash                   | `git stash pop`               |
+| See unstaged changes            | `git diff`                    |
+| See staged changes              | `git diff --cached`           |
+| See who changed a line          | `git blame <file>`            |
+| Remove untracked files          | `git clean -f`                |
+| Preview clean                   | `git clean -n`                |
+| Push branch                     | `git push`                    |
+| Safer rewritten-history push    | `git push --force-with-lease` |
+
+---
+
+# 147. The Most Important Git Mental Model
+
+Memorize this:
+
+```text
+                GIT COMMAND MENTAL MODEL
+
+git restore
+     ↓
+   FILE
+
+git reset
+     ↓
+   MOVE
+
+git revert
+     ↓
+    UNDO
+
+git rebase
+     ↓
+   REPLAY
+
+git merge
+     ↓
+  COMBINE
+
+git cherry-pick
+     ↓
+ ONE COMMIT
+
+git stash
+     ↓
+ TEMPORARY
+
+git reflog
+     ↓
+ RECOVER
+
+git fetch
+     ↓
+ UPDATE REMOTE INFO
+
+git pull
+     ↓
+ FETCH + INTEGRATE
+
+git push
+     ↓
+ SEND COMMITS
+
+git diff
+     ↓
+ SEE CHANGES
+
+git log
+     ↓
+ SEE HISTORY
+
+git blame
+     ↓
+ TRACE LINE
+
+git bisect
+     ↓
+ FIND BAD COMMIT
+```
+
+---
+
+# 148. Senior DevOps Interview Scenario
+
+### Interviewer:
+
+> Your local main branch has a commit, but someone else pushed a commit to GitHub. When you run `git push`, it is rejected. What will you do?
+
+### Strong answer:
+
+> First, I won't force-push immediately. I'll check the working tree with `git status` and inspect the history with `git log --oneline --graph --decorate --all`. Then I'll run `git fetch origin` to update my remote-tracking branch without modifying my working branch.
+>
+> If my local changes are compatible with the latest remote history, I'll rebase my local commits onto `origin/main` using `git rebase origin/main`. If there are conflicts, I'll resolve them, stage the files, and continue the rebase.
+>
+> Once the history is linear and my local branch is ahead of `origin/main`, I'll run `git push`.
+>
+> I would only consider `--force-with-lease` if I intentionally rewrote history on a branch where that operation is allowed. I would not casually force-push a shared protected main branch.
+
+The mental picture is:
+
+```text
+Before:
+
+             LOCAL
+               D
+              /
+A---B---C
+              \
+               E
+             REMOTE
+
+
+git fetch
+    ↓
+
+Know about E
+
+
+git rebase origin/main
+    ↓
+
+A---B---C---E---D'
+                 ↑
+                main
+
+
+git push
+    ↓
+
+Remote updated
+```
+
+---
+
+# 149. Final Hands-On Challenge
+
+Try completing this workflow without looking at the commands above.
+
+### Scenario
+
+You are working on:
+
+```text
+main
+```
+
+Create:
+
+```text
+feature/payment
+```
+
+Make three commits:
+
+```text
+P1 Add payment configuration
+P2 Add payment logging
+P3 Add payment health check
+```
+
+Meanwhile, main receives:
+
+```text
+M1 Update production configuration
+```
+
+Your task:
+
+```text
+1. Rebase feature/payment onto main
+2. Resolve any conflict
+3. Cherry-pick P3 onto another release branch
+4. Accidentally reset the feature branch
+5. Recover it using reflog
+6. Revert P2
+7. Stash an unfinished change
+8. Restore the stash
+9. Push the feature branch
+10. Inspect the final history using git log
+```
+
+Your expected final history should conceptually resemble:
+
+```text
+main:
+
+A---B---M1
+         ↑
+        main
+
+
+feature/payment:
+
+A---B---M1---P1'---P2'---P3'---R
+                              ↑
+                         feature/payment
+
+
+release/1.0:
+
+A---B---M1---P3''
+                   ↑
+                release/1.0
+```
+
+The exact commit IDs will be different on your machine.
+
+That is intentional.
+
+The goal of the lab is not memorizing commit IDs.
+
+The goal is understanding:
+
+```text
+WHERE THE BRANCH IS
+        ↓
+WHAT COMMIT IT POINTS TO
+        ↓
+WHAT CHANGES ARE LOCAL
+        ↓
+WHAT CHANGES ARE REMOTE
+        ↓
+WHICH HISTORY OPERATION IS SAFE
+```
+
+---
+
+# 150. Final Interview Rule
+
+When troubleshooting Git in production, **don't start by running random commands**.
+
+Start with:
+
+```bash
+git status
+git branch --show-current
+git log --oneline --graph --decorate --all
+git fetch origin
+```
+
+Understand the history first.
+
+Then choose:
+
+```text
+UNDO       → git revert
+MOVE BACK  → git reset
+REPLAY     → git rebase
+COMBINE    → git merge
+ONE COMMIT → git cherry-pick
+TEMP WORK  → git stash
+RECOVER    → git reflog
+REMOTE INFO→ git fetch
+SEND       → git push
+```
+
+That approach is much safer than treating Git as a collection of commands to memorize.
